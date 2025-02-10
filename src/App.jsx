@@ -7,7 +7,7 @@ import Logo from "../public/Logo.jpg";
 import { useAppContext } from "./AppContext";
 function App() {
     const Navigate = useNavigate();
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     // const [userType, setUserType] = useState(null);
     const { set_Auth, store_login } = useAppContext();
     // useEffect(() => {
