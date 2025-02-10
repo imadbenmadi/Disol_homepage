@@ -1,14 +1,14 @@
-import React, { useRef } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
+import { useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
-import Swal from "sweetalert2";
-import handleLogin from "./Post_Login";
-import { handle_google_Login } from "../Google_auth/handle_google_Login";
 import ReCAPTCHA from "react-google-recaptcha";
 import Google_auth_data from "../../../google-auth.json";
+import Swal from "sweetalert2";
+import handleRegister from "./Post_Register";
+import { handle_google_Register } from "../Google_auth/handle_google_Register";
 
-function Login_Popup() {
+function Register() {
     const Navigate = useNavigate();
     const recaptchaRef = useRef(); // Use ref for reCAPTCHA
 
@@ -23,7 +23,7 @@ function Login_Popup() {
     };
 
     // Handle form submission with reCAPTCHA
-    const handleSubmit = async (values, { setSubmitting }) => {
+    const handleSubmit = async (values, Navigate, { setSubmitting }) => {
         const recaptchaValue = recaptchaRef.current?.getValue();
         if (!recaptchaValue) {
             Swal.fire({
@@ -35,7 +35,7 @@ function Login_Popup() {
             return;
         }
         values.recaptcha = recaptchaValue;
-        await handleLogin(values, { setSubmitting });
+        await handleRegister(values, Navigate, { setSubmitting });
     };
 
     return (
@@ -43,32 +43,51 @@ function Login_Popup() {
             <div className="w-full max-w-md bg-white rounded-lg shadow-lg flex flex-col items-center p-6">
                 <div className="w-full text-black_text">
                     <div className="pb-4">
-                        <div className="text-3xl font-semibold">Log in</div>
-                        <div>Sign in to get started.</div>
+                        <div className="text-3xl font-semibold">
+                            Create an account
+                        </div>
+                        <div>Let’s get started on your freelance journey.</div>
                     </div>
 
                     {/* Google Login Button */}
                     <div className="w-fit mx-auto mb-4">
                         <GoogleLogin
                             onSuccess={(response) =>
-                                handle_google_Login(response, Navigate)
+                                handle_google_Register(response, Navigate)
                             }
                             onError={handleFailure}
+                            size="medium"
                             text="continue_with"
                         />
                     </div>
 
-                    {/* Email and Password Login Form */}
+                    {/* Registration Form */}
                     <Formik
                         initialValues={{
                             userType: "user",
+                            firstName: "",
+                            lastName: "",
                             email: "",
                             password: "",
                         }}
                         validate={(values) => {
                             const errors = {};
+                            if (!values.firstName) {
+                                errors.firstName = "First Name is Required";
+                            } else if (values.firstName.length < 3) {
+                                errors.firstName = "At least 3 chars";
+                            } else if (values.firstName.length > 30) {
+                                errors.firstName = "At most 30 chars";
+                            }
+                            if (!values.lastName) {
+                                errors.lastName = "Last Name is Required";
+                            } else if (values.lastName.length < 3) {
+                                errors.lastName = "At least 3 chars";
+                            } else if (values.lastName.length > 30) {
+                                errors.lastName = "At most 30 chars";
+                            }
                             if (!values.email) {
-                                errors.email = "Email is required";
+                                errors.email = "Email is Required";
                             } else if (
                                 !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(
                                     values.email
@@ -77,17 +96,56 @@ function Login_Popup() {
                                 errors.email = "Invalid email address";
                             }
                             if (!values.password) {
-                                errors.password = "Password is required";
+                                errors.password = "Password is Required";
                             } else if (values.password.length < 8) {
                                 errors.password =
                                     "Password must be at least 8 characters long";
                             }
                             return errors;
                         }}
-                        onSubmit={handleSubmit}
+                        onSubmit={(values, { setSubmitting }) => {
+                            handleSubmit(values, Navigate, { setSubmitting });
+                        }}
                     >
                         {({ isSubmitting }) => (
                             <Form className="flex flex-col text-sm md:text-lg gap-4 text-black_text">
+                                <div className="flex flex-col md:flex-row gap-4 w-full">
+                                    <div className="w-full md:w-1/2 relative">
+                                        <div className="font-semibold text-sm pb-1">
+                                            First Name
+                                        </div>
+                                        <Field
+                                            placeholder="Prénom"
+                                            type="text"
+                                            name="firstName"
+                                            disabled={isSubmitting}
+                                            className="w-full border border-gray_white px-4 py-2 rounded-lg text-sm"
+                                        />
+                                        <ErrorMessage
+                                            name="firstName"
+                                            component="div"
+                                            style={names_errorInputMessage}
+                                        />
+                                    </div>
+                                    <div className="w-full md:w-1/2 relative">
+                                        <div className="font-semibold text-sm pb-1">
+                                            Last Name
+                                        </div>
+                                        <Field
+                                            placeholder="Nom de famille"
+                                            type="text"
+                                            name="lastName"
+                                            disabled={isSubmitting}
+                                            className="w-full border border-gray_white px-4 py-2 rounded-lg text-sm"
+                                        />
+                                        <ErrorMessage
+                                            name="lastName"
+                                            component="div"
+                                            style={names_errorInputMessage}
+                                        />
+                                    </div>
+                                </div>
+
                                 <div>
                                     <div className="font-semibold text-sm pb-1">
                                         Email
@@ -97,12 +155,12 @@ function Login_Popup() {
                                         type="email"
                                         name="email"
                                         disabled={isSubmitting}
-                                        className="border border-gray_white px-4 py-2 rounded-lg text-sm w-full"
+                                        className="w-full border border-gray_white px-4 py-2 rounded-lg text-sm"
                                     />
                                     <ErrorMessage
                                         name="email"
                                         component="div"
-                                        className="text-red-500 text-xs mt-1"
+                                        style={errorInputMessage}
                                     />
                                 </div>
 
@@ -115,12 +173,12 @@ function Login_Popup() {
                                         type="password"
                                         name="password"
                                         disabled={isSubmitting}
-                                        className="border border-gray_white px-4 py-2 rounded-lg text-sm w-full"
+                                        className="w-full border border-gray_white px-4 py-2 rounded-lg text-sm"
                                     />
                                     <ErrorMessage
                                         name="password"
                                         component="div"
-                                        className="text-red-500 text-xs mt-1"
+                                        style={errorInputMessage}
                                     />
                                 </div>
 
@@ -145,14 +203,11 @@ function Login_Popup() {
                         )}
                     </Formik>
 
-                    {/* Sign Up Link */}
+                    {/* Sign In Link */}
                     <div className="pt-6 text-sm font-semibold text-gray_v text-center">
-                        Don’t have an account?{" "}
-                        <Link
-                            to="/Register"
-                            className="underline text-perpol_v"
-                        >
-                            Sign up
+                        Already have an account?{" "}
+                        <Link to="/Login" className="underline text-perpol_v">
+                            Sign in
                         </Link>
                     </div>
                 </div>
@@ -161,4 +216,17 @@ function Login_Popup() {
     );
 }
 
-export default Login_Popup;
+const errorInputMessage = {
+    fontSize: "12px",
+    color: "red",
+};
+
+const names_errorInputMessage = {
+    position: "absolute",
+    bottom: "-22px",
+    left: "5px",
+    fontSize: "12px",
+    color: "red",
+};
+
+export default Register;
